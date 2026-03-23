@@ -1,26 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="my">
 <head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Video Call App</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { margin: 0; background: #000; color: white; font-family: sans-serif; overflow: hidden; }
-        .app { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .sidebar { position: absolute; right: 15px; bottom: 100px; display: flex; flex-direction: column; gap: 20px; text-align: center; }
-        .btn { background: none; border: none; color: white; font-size: 30px; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; margin: 0; padding: 20px; }
+        .video-container { display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px; }
+        video { width: 90%; max-width: 400px; border-radius: 15px; background: black; border: 2px solid #444; }
+        #remoteVideo { border-color: #00ff00; }
+        .controls { margin-top: 20px; padding: 15px; background: #333; border-radius: 10px; }
+        input { padding: 10px; border-radius: 5px; border: none; width: 200px; margin-bottom: 10px; color: black; }
+        button { padding: 10px 20px; border-radius: 5px; border: none; background: #28a745; color: white; cursor: pointer; font-weight: bold; }
+        #peer-id-display { font-size: 1.2em; color: #ffcc00; margin: 10px 0; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="app">
-        <video id="v" loop autoplay muted src="https://www.w3schools.com/html/mov_bbb.mp4"></video>
-        <div class="sidebar">
-            <button class="btn" onclick="alert('Calling...')"><i class="fas fa-video"></i></button>
-            <button class="btn" style="color:red"><i class="fas fa-heart"></i></button>
-            <div style="font-size:12px">1.2M</div>
-            <button class="btn"><i class="fas fa-comment"></i></button>
-            <div style="font-size:12px">500</div>
-        </div>
+    <h2>Video Call App</h2>
+    <div>ကိုယ့်ရဲ့ ID: <span id="peer-id-display">စောင့်ဆိုင်းနေသည်...</span></div>
+    <div class="controls">
+        <input type="text" id="remote-id" placeholder="တစ်ဖက်လူရဲ့ ID ကိုရိုက်ပါ">
+        <button onclick="makeCall()">Connect & Call</button>
     </div>
+    <div class="video-container">
+        <p>တစ်ဖက်လူ (Remote Video)</p>
+        <video id="remoteVideo" autoplay playsinline></video>
+        <p>ကိုယ်တိုင် (Local Video)</p>
+        <video id="localVideo" autoplay playsinline muted></video>
+    </div>
+    <script>
+        const peer = new Peer(); 
+        let localStream;
+        peer.on('open', (id) => { document.getElementById('peer-id-display').innerText = id; });
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then((stream) => { localStream = stream; document.getElementById('localVideo').srcObject = stream; })
+            .catch((err) => { alert("ကင်မရာဖွင့်လို့မရပါဘူး: " + err); });
+        peer.on('call', (call) => {
+            call.answer(localStream);
+            call.on('stream', (remoteStream) => { document.getElementById('remoteVideo').srcObject = remoteStream; });
+        });
+        function makeCall() {
+            const remoteId = document.getElementById('remote-id').value;
+            if (!remoteId) return alert("ID ရိုက်ပေးပါဦး");
+            const call = peer.call(remoteId, localStream);
+            call.on('stream', (remoteStream) => { document.getElementById('remoteVideo').srcObject = remoteStream; });
+        }
+    </script>
 </body>
 </html>
